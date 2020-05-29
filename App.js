@@ -1,5 +1,11 @@
 import * as React from "react";
-import { Text, View } from "react-native";
+import {
+  Text,
+  Card,
+  Header,
+  ThemeProvider,
+  Divider,
+} from "react-native-elements";
 import { Notifications as ExpoNotifications } from "expo";
 import * as Permissions from "expo-permissions";
 import Constants from "expo-constants";
@@ -30,26 +36,36 @@ async function initPush() {
 export default function App() {
   const [state, setState] = React.useState({
     devicePushToken: "",
-    notification: {},
+    messages: [],
+  });
+
+  ExpoNotifications.addListener((notification) => {
+    console.log(JSON.stringify(notification));
+    let messages = state.messages;
+    messages.push(notification);
+    setState({ ...state, messages: messages });
   });
 
   React.useEffect(() => {
     async function setup() {
       let token = await initPush();
-      setState({ devicePushToken: token });
-
-      ExpoNotifications.addListener((notification) => {
-        console.log(notification);
-        setState({ notification: notification });
-      });
+      setState({ ...state, devicePushToken: token });
     }
     setup();
   }, []);
 
   return (
-    <View>
-      <Text>Push notifications debugger</Text>
-      <Text>{JSON.stringify(state)}</Text>
-    </View>
+    <ThemeProvider>
+      <Header centerComponent={<Text>Push notification debugger</Text>} />
+      <Card title="Push notification token">
+        <Text>{JSON.stringify(state.devicePushToken, null, 2)}</Text>
+      </Card>
+      <Divider />
+      <Card title="Events">
+        {state.messages.map((item, index) => (
+          <Text key={index}>{JSON.stringify(item, null, 2)}</Text>
+        ))}
+      </Card>
+    </ThemeProvider>
   );
 }
